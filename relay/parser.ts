@@ -9,7 +9,7 @@ export function parseTags(raw: string) {
   return tags;
 }
 
-export function parsePrivmsg(line: string) {
+export function parsePrivmsg(line: string, getBadgeUrl = (type: string, version: string) => `https://static-cdn.jtvnw.net/badges/v1/${type}/${version}/1`) {
   const tagMatch = line.match(/^@([^ ]+) /);
   const tags = tagMatch ? parseTags(tagMatch[1]) : {};
   const privmsg = line.match(/ PRIVMSG #[^ ]+ :(.+)$/);
@@ -17,10 +17,11 @@ export function parsePrivmsg(line: string) {
   const payload = tagMatch ? line.slice(tagMatch[0].length) : line;
   const usernameFromPrefix = payload.match(/^:[^!]+!/)?.[0]?.slice(1, -1) ?? "unknown";
   const displayName = tags["display-name"] || usernameFromPrefix;
-  const badges = (tags.badges || "").split(",").filter(Boolean).map((value) => { const [type, version = "1"] = value.split("/"); return { type, url: `https://static-cdn.jtvnw.net/badges/v1/${type}/${version}/1` }; });
+  const badges = (tags.badges || "").split(",").filter(Boolean).map((value) => { const [type, version = "1"] = value.split("/"); return { type, url: getBadgeUrl(type, version) }; });
   const emotes = (tags.emotes || "").split("/").flatMap((group) => {
     const [id, positions] = group.split(":");
-    return (positions || "").split(",").map((range) => { const [start, end] = range.split("-").map(Number); return Number.isFinite(start) ? { id, name: "", url: `https://static-cdn.jtvnw.net/emoticons/v2/${id}/default/dark/2.0`, start, end } : null; }).filter(Boolean);
+    if (!id || !positions) return [];
+    return positions.split(",").map((range) => { const [start, end] = range.split("-").map(Number); return Number.isFinite(start) && Number.isFinite(end) ? { id, name: "", url: `https://static-cdn.jtvnw.net/emoticons/v2/${id}/default/dark/2.0`, start, end } : null; }).filter(Boolean);
   });
   const bits = Number(tags.bits || 0) || undefined;
   return { id: crypto.randomUUID(), username: usernameFromPrefix, displayName, color: tags.color || "#57e6ff", text: privmsg[1], badges, emotes, timestamp: Date.now(), bits, system: bits ? "cheer" as const : undefined };

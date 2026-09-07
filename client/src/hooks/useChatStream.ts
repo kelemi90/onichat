@@ -35,16 +35,25 @@ export function useChatStream(channel: string, demo: boolean, maxMessages: numbe
         setStatus({ state: "connected", channel, detail: "Live relay connected" });
       };
       socket.onmessage = (event) => {
-        try {
-          const payload = JSON.parse(event.data) as OverlayChatMessage | (RelayStatus & { type: "status" });
+        const parsePayload = (data: string) => {
+          const payload = JSON.parse(data) as OverlayChatMessage | (RelayStatus & { type: "status" });
           if ("type" in payload && payload.type === "status") {
             setStatus({ state: payload.state, channel: payload.channel, detail: payload.detail });
             return;
           }
           const message = payload as OverlayChatMessage;
-          if (message.id && message.username) setMessages((current) => [...current, message].slice(-maxMessages));
-        } catch {
-          setStatus({ state: "error", channel, detail: "Relay sent an unreadable message" });
+          if (message.id && message.username) {
+            setMessages((current) => [...current, { ...message, timestamp: Date.now() }].slice(-maxMessages));
+          }
+        };
+        if (typeof event.data === "string") {
+          try { parsePayload(event.data); } catch { setStatus({ state: "error", channel, detail: "Relay sent an unreadable message" }); }
+          return;
+        }
+        if (event.data instanceof Blob) {
+          event.data.text().then((data) => {
+            try { parsePayload(data); } catch { setStatus({ state: "error", channel, detail: "Relay sent an unreadable message" }); }
+          });
         }
       };
       socket.onerror = () => setStatus({ state: "error", channel, detail: "Relay connection error" });

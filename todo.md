@@ -44,3 +44,49 @@
 ## Hostname update
 
 - [x] Replace the previous public hostname with oni.laiki.fi in environment and deployment documentation
+
+## Ubuntu Docker installation recovery
+
+- [x] Diagnose why the Docker apt repository packages are unavailable on Ubuntu 26.04
+- [x] Add a safe installation fallback and verification commands
+- [x] Update the Proxmox guide with the corrected Docker installation path
+
+## Docker build recovery
+
+- [x] Diagnose the relay image failure at `pnpm install --prod --frozen-lockfile`
+- [x] Make the production dependency installation deterministic in Docker
+- [x] Update Proxmox troubleshooting guidance for Docker build failures
+- [x] Re-run verification and save a corrected checkpoint
+
+## Docker build-stage recovery
+
+- [x] Diagnose the build-stage `pnpm install --frozen-lockfile` exit 254
+- [x] Make the Docker package-manager bootstrap deterministic with explicit pnpm 10.4.1 pinning
+- [x] Add build-stage plain-log diagnostics and VM troubleshooting instructions
+- [x] Re-run verification and save a corrected checkpoint
+
+## Exit-254 diagnostic follow-up
+
+- [x] Collect complete `docker compose build --progress=plain` output including the first pnpm error
+- [x] Apply the targeted fix instead of inferring from exit code 254 on the user's VM
+- [x] Verify the fix and save a corrected checkpoint after the user's VM build succeeds; user subsequently confirmed the deployed version is working
+
+## Responsive control room and visible preview
+
+- [x] Make the control room fit narrow and wide browser windows without horizontal overflow
+- [x] Add an in-page OBS-style overlay preview using the same configuration and demo/live message renderer
+- [x] Add preview canvas sizing and visibility guidance for users
+- [x] Verify responsive desktop/mobile layouts and save an updated checkpoint
+
+## Restore baseline and design guide follow-up
+
+- [x] Restore the working baseline at checkpoint c33204f9
+- [x] Compare the restored baseline with kelemi90/onichat on GitHub
+- [x] Preserve the c332 UI design and responsive preview changes without overwriting the working baseline
+- [x] Write a guide for updating graphics, themes, typography, and layout
+- [x] Run tests, type check, production build, and visual verification
+- [x] Save and deliver the restored compatible checkpoint
+
+## Authentication migration history
+
+- [x] Twitch OAuth website-login migration cancelled by user; no Twitch-auth implementation retained in the restored baseline

@@ -2,6 +2,7 @@ import "dotenv/config";
 import express from "express";
 import { createServer } from "http";
 import net from "net";
+import { WebSocket as RelayWebSocket, WebSocketServer } from "ws";
 import { createExpressMiddleware } from "@trpc/server/adapters/express";
 import { registerOAuthRoutes } from "./oauth";
 import { registerStorageProxy } from "./storageProxy";
@@ -34,6 +35,32 @@ async function findAvailablePort(startPort: number = 3000): Promise<number> {
 async function startServer() {
   const app = express();
   const server = createServer(app);
+  const relayPort = Number(process.env.RELAY_PORT ?? 8787);
+  const relayHost = process.env.RELAY_HOST ?? "relay";
+  const relayProxy = new WebSocketServer({ noServer: true });
+
+  server.on("upgrade", (request, socket, head) => {
+    if (!request.url?.startsWith("/ws/chat")) {
+      socket.destroy();
+      return;
+    }
+
+    relayProxy.handleUpgrade(request, socket, head, (client) => {
+      const relay = new RelayWebSocket(`ws://${relayHost}:${relayPort}${request.url}`, {
+        headers: request.headers.origin ? { origin: request.headers.origin } : undefined,
+      });
+
+      client.on("message", (data) => {
+        if (relay.readyState === RelayWebSocket.OPEN) relay.send(data);
+      });
+      relay.on("message", (data) => {
+        if (client.readyState === RelayWebSocket.OPEN) client.send(data.toString());
+      });
+      client.on("close", () => relay.close());
+      relay.on("close", () => client.close());
+      relay.on("error", () => client.close());
+    });
+  });
 
   app.disable("x-powered-by");
 

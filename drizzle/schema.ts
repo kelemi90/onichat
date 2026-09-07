@@ -25,4 +25,30 @@ export const users = mysqlTable("users", {
 export type User = typeof users.$inferSelect;
 export type InsertUser = typeof users.$inferInsert;
 
-// TODO: Add your tables here
+export const streamerRequests = mysqlTable("streamer_requests", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  requestedTenant: varchar("requestedTenant", { length: 48 }).notNull(),
+  requestedChannel: varchar("requestedChannel", { length: 25 }).notNull(),
+  status: mysqlEnum("status", ["pending", "approved", "rejected", "revoked"]).default("pending").notNull(),
+  note: text("note"),
+  reviewedBy: int("reviewedBy"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  reviewedAt: timestamp("reviewedAt"),
+});
+
+export const streamerTenants = mysqlTable("streamer_tenants", {
+  id: int("id").autoincrement().primaryKey(),
+  ownerUserId: int("ownerUserId").notNull(),
+  slug: varchar("slug", { length: 48 }).notNull().unique(),
+  displayName: varchar("displayName", { length: 120 }).notNull(),
+  channel: varchar("channel", { length: 25 }).notNull().unique(),
+  twitchUserId: varchar("twitchUserId", { length: 64 }),
+  twitchLogin: varchar("twitchLogin", { length: 64 }),
+  encryptedAccessToken: text("encryptedAccessToken"),
+  encryptedRefreshToken: text("encryptedRefreshToken"),
+  accessTokenExpiresAt: timestamp("accessTokenExpiresAt"),
+  allowedOrigin: varchar("allowedOrigin", { length: 255 }).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});

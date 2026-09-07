@@ -2,9 +2,11 @@
 
 A transparent, cinematic neon-noir Twitch chat overlay designed for OBS Browser Source. The project contains a React control room, a credential-free demo mode, and an always-on Node relay that keeps Twitch credentials outside the browser.
 
+For a clean deployment with your own Twitch bot, channel, domain, OAuth token, Docker host, and OBS settings, start with [docs/clean-install.md](docs/clean-install.md).
+
 ## Architecture
 
-The system uses two containers. The `web` container serves the React application and control room on port `3000`. The `relay` container connects to Twitch IRC over TLS, parses chat messages, and broadcasts normalized JSON messages over WebSocket on port `8787`. A reverse proxy should expose the web service publicly and route `/ws/chat` to the relay service.
+The system uses two containers. The `web` container serves the React application and control room on port `3000`. The `relay` container connects to Twitch IRC over a secure WebSocket on port `443`, parses chat messages, and broadcasts normalized JSON messages over its internal port `8787`. A reverse proxy should expose the web service publicly and route `/ws/chat` to the relay service, preserving WebSocket upgrades.
 
 The browser never receives the Twitch OAuth token. It receives only normalized chat messages from the relay. The relay is intentionally configured for one Twitch channel per deployment, which keeps the runtime predictable and avoids allowing arbitrary channel joins from public URLs.
 
@@ -16,7 +18,7 @@ Run `pnpm check` for TypeScript validation, `pnpm test` for unit tests, and `pnp
 
 ## Twitch setup
 
-Create or use a dedicated Twitch bot account. Generate an IRC OAuth token with chat permissions through a trusted Twitch OAuth flow, then store it only in the host `.env` file described in `docs/environment-variables.md`. Set `TWITCH_BOT_USERNAME`, `TWITCH_OAUTH_TOKEN`, and `TWITCH_CHANNEL` on the Proxmox host. Never place these values in frontend code, URL parameters, browser storage, or variables beginning with `VITE_`.
+Create or use a dedicated Twitch bot account. Generate an IRC OAuth token with `chat:read chat:edit` permissions through a trusted Twitch OAuth flow, then store it only in the host `.env` file described in `docs/environment-variables.md`. Set `TWITCH_BOT_USERNAME`, `TWITCH_OAUTH_TOKEN`, and `TWITCH_CHANNEL` on the host. Never place these values in frontend code, URL parameters, browser storage, or variables beginning with `VITE_`. The token must belong to the account named by `TWITCH_BOT_USERNAME`.
 
 The relay joins Twitch using IRC over TLS, responds to server `PING` frames, requests Twitch tags and emote metadata, and reconnects with exponential backoff after network failures. The `/health` endpoint reports whether the relay is currently connected.
 
@@ -35,10 +37,10 @@ The web service is published on `127.0.0.1:3000` and the relay on `127.0.0.1:878
 
 ## Reverse proxy guidance
 
-For `chat.laiki.fi`, terminate TLS at an existing reverse proxy such as Caddy, Nginx Proxy Manager, or Traefik. Route ordinary HTTPS requests to the `web` service on port `3000` and route WebSocket requests for `/ws/chat` to the `relay` service on port `8787`. WebSocket upgrade headers must be preserved. A Caddy-style equivalent is:
+For your public domain, terminate TLS at an existing reverse proxy such as Caddy, Nginx Proxy Manager, or Traefik. Route ordinary HTTPS requests to the `web` service on port `3000` and route WebSocket requests for `/ws/chat` to the `relay` service on port `8787`. WebSocket upgrade headers must be preserved. A Caddy-style equivalent is:
 
 ```caddy
-chat.laiki.fi {
+chat.example.com {
   reverse_proxy /ws/chat relay:8787
   reverse_proxy web:3000
 }
@@ -53,7 +55,7 @@ Add a Browser Source with the generated URL from the control room. Enable a tran
 The URL supports settings such as `duration`, `maxMessages`, `fontSize`, `width`, `animation`, `speed`, `theme`, `accent`, `badges`, `timestamps`, `usernames`, `emotes`, and `compact`. Example:
 
 ```text
-https://chat.laiki.fi/overlay?channel=your_channel&duration=8&maxMessages=8&fontSize=18&theme=oni&accent=magenta
+https://chat.example.com/overlay?channel=your_channel&duration=8&maxMessages=8&fontSize=18&theme=oni&accent=magenta
 ```
 
 ## Adding themes

@@ -34,7 +34,33 @@ docker version
 docker compose version
 ```
 
-If your organization does not permit the convenience installer, install Docker Engine and the Compose plugin from Docker's official Debian or Ubuntu repository instead. Do not install Docker from an untrusted third-party script.
+If the Docker CE repository does not provide candidates on your VM, use Ubuntu's signed packages instead. This is the recommended recovery path for the `Package 'docker-ce' has no installation candidate` error. Do not mix the failed Docker CE repository install with a second third-party repository:
+
+```bash
+sudo rm -f /etc/apt/sources.list.d/docker.sources
+sudo apt update
+sudo apt install -y docker.io docker-compose-v2 util-linux-extra
+sudo systemctl enable --now docker
+sudo docker version
+sudo docker compose version
+sudo docker run --rm hello-world
+```
+
+Add your user to the Docker group, then log out and back in so the group membership is refreshed. Until then, prefix Docker commands with `sudo`:
+
+```bash
+sudo usermod -aG docker "$USER"
+```
+
+If `docker-compose-v2` is not found, enable Ubuntu's Universe repository and retry:
+
+```bash
+sudo add-apt-repository universe
+sudo apt update
+sudo apt install -y docker.io docker-compose-v2 util-linux-extra
+```
+
+Do not install `podman-docker` for this project; it is a compatibility wrapper, not the Docker Engine runtime expected by this Compose deployment.
 
 ## 3. Put the project on the VM
 
@@ -100,6 +126,17 @@ docker compose up -d --build
 docker compose ps
 docker compose logs --tail=100 relay
 ```
+
+If the build stops at either `pnpm install --frozen-lockfile` or `pnpm install --prod --frozen-lockfile`, make sure you are using the latest project files. This project uses a checked-in pnpm patch, and both Docker stages must copy the `patches/` directory before running frozen pnpm installs. Confirm the build context contains the patch and use plain progress output so the underlying package-manager error is visible:
+
+```bash
+test -f patches/wouter@3.7.1.patch && echo "patch present"
+docker compose build --no-cache --progress=plain relay
+docker compose up -d relay
+docker compose logs --tail=100 relay
+```
+
+The Dockerfile pins pnpm 10.4.1 and prints the active version during the build. If the plain output reports a registry or DNS timeout, fix VM internet access first; if it reports a missing patch, confirm you are building from the project root and that `.dockerignore` is not excluding `patches/`.
 
 The web container should publish only `127.0.0.1:3000` and the relay only `127.0.0.1:8787`. This is intentional: neither port should be directly reachable from the internet.
 

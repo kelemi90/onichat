@@ -24,6 +24,9 @@ export type OverlayChatMessage = {
   system?: "subscription" | "raid" | "cheer";
 };
 
+export type HorizontalPosition = "left" | "center" | "right";
+export type VerticalPosition = "top" | "center" | "bottom";
+
 export type RelayStatus = {
   state: "connecting" | "connected" | "reconnecting" | "error";
   channel?: string;
@@ -36,6 +39,8 @@ export const DEFAULT_OVERLAY_CONFIG = {
   maxMessages: 8,
   fontSize: 18,
   width: 520,
+  horizontal: "left" as HorizontalPosition,
+  vertical: "bottom" as VerticalPosition,
   animation: "hud" as const,
   speed: 1,
   showBadges: true,
@@ -44,12 +49,16 @@ export const DEFAULT_OVERLAY_CONFIG = {
   showEmotes: true,
   theme: "oni" as const,
   accent: "magenta" as const,
+  messageColor: "#ffffff",
   opacity: 1,
   compact: false,
   demo: false,
 };
 
 export type OverlayConfig = typeof DEFAULT_OVERLAY_CONFIG;
+
+export const ALLOWED_HORIZONTAL_POSITIONS = ["left", "center", "right"] as const;
+export const ALLOWED_VERTICAL_POSITIONS = ["top", "center", "bottom"] as const;
 
 export const ALLOWED_ANIMATIONS = ["hud", "slide", "fade", "none"] as const;
 export const ALLOWED_THEMES = ["oni", "minimal", "matrix"] as const;

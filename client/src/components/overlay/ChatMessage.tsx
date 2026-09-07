@@ -1,15 +1,16 @@
 import { useEffect, useState } from "react";
 import type { OverlayChatMessage } from "@shared/chat";
 
-type Props = { message: OverlayChatMessage; duration: number; showBadges: boolean; showTimestamps: boolean; showUsernames: boolean; showEmotes: boolean; compact: boolean; animation: string; speed: number };
+type Props = { message: OverlayChatMessage; duration: number; showBadges: boolean; showTimestamps: boolean; showUsernames: boolean; showEmotes: boolean; compact: boolean; animation: string; speed: number; messageColor?: string };
 
 function Badge({ type, url }: { type: string; url?: string }) {
   const labels: Record<string, string> = { broadcaster: "LIVE", moderator: "MOD", subscriber: "SUB", vip: "VIP", bits: "BITS", founder: "FOUNDER", partner: "PARTNER" };
-  return <span className={`chat-badge badge-${type}`} aria-label={`${type} badge`}>{url ? <img src={url} alt="" loading="lazy" /> : labels[type] ?? type.toUpperCase()}</span>;
+  const [imageFailed, setImageFailed] = useState(false);
+  return <span className={`chat-badge badge-${type}`} aria-label={`${type} badge`}>{url && !imageFailed ? <img src={url} alt={labels[type] ?? type.toUpperCase()} loading="lazy" onError={() => setImageFailed(true)} /> : <span className="chat-badge-label">{labels[type] ?? type.toUpperCase()}</span>}</span>;
 }
 
 function MessageContent({ message, showEmotes }: { message: OverlayChatMessage; showEmotes: boolean }) {
-  if (!showEmotes || message.emotes.length === 0) return <>{message.text}</>;
+  if (!showEmotes || message.emotes.length === 0) return <span className="message-copy">{message.text}</span>;
   const ranges = [...message.emotes].sort((a, b) => a.start - b.start);
   const parts: React.ReactNode[] = [];
   let cursor = 0;
@@ -20,10 +21,10 @@ function MessageContent({ message, showEmotes }: { message: OverlayChatMessage; 
     cursor = emote.end + 1;
   });
   if (cursor < message.text.length) parts.push(message.text.slice(cursor));
-  return <>{parts}</>;
+  return <span className="message-copy">{parts}</span>;
 }
 
-export default function ChatMessage({ message, duration, showBadges, showTimestamps, showUsernames, showEmotes, compact, animation, speed }: Props) {
+export default function ChatMessage({ message, duration, showBadges, showTimestamps, showUsernames, showEmotes, compact, animation, speed, messageColor = "#f3fbff" }: Props) {
   const [visible, setVisible] = useState(true);
   useEffect(() => {
     const timer = window.setTimeout(() => setVisible(false), duration * 1000);
@@ -39,7 +40,7 @@ export default function ChatMessage({ message, duration, showBadges, showTimesta
         {showTimestamps && <time>{new Date(message.timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</time>}
         {message.bits && <span className="message-event">+{message.bits} BITS</span>}
       </div>
-      <div className="message-text"><MessageContent message={message} showEmotes={showEmotes} /></div>
+      <div className="message-text" data-text-length={message.text.length} style={{ color: messageColor || "#ffffff" }}><MessageContent message={message} showEmotes={showEmotes} />{!message.text && "(empty chat message)"}</div>
     </div>
   </article>;
 }

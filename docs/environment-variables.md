@@ -4,6 +4,7 @@ Create a `.env` file on the Proxmox host next to `docker-compose.yml`; do not co
 
 | Variable | Required | Purpose |
 |---|---:|---|
+| `TWITCH_CLIENT_ID` | Yes for Twitch badge images | Twitch Developer application client ID used to query global and channel badge metadata. |
 | `TWITCH_BOT_USERNAME` | Yes for live mode | Twitch account username used by the IRC relay. |
 | `TWITCH_OAUTH_TOKEN` | Yes for live mode | OAuth token for the bot account, stored only in the relay container. Remove the `oauth:` prefix if you prefer; the relay accepts either form. |
 | `TWITCH_CHANNEL` | Yes for live mode | Channel joined by the relay, without the leading `#`. |

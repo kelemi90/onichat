@@ -17,4 +17,3 @@ RUN pnpm install --prod --frozen-lockfile
 COPY --from=build /app/dist ./dist
 EXPOSE 3000 8787
 CMD ["pnpm", "start"]
-

@@ -14,6 +14,12 @@ describe("Twitch IRC parser", () => {
     expect(parsePrivmsg("PING :tmi.twitch.tv")).toBeNull();
   });
 
+  it("does not create a fake emote for an empty emotes tag", () => {
+    const message = parsePrivmsg("@badges=broadcaster/1;display-name=kelmigames;emotes= :kelmigames!u@h PRIVMSG #oni :Kokeilu testi 123");
+    expect(message?.text).toBe("Kokeilu testi 123");
+    expect(message?.emotes).toEqual([]);
+  });
+
   it("normalizes subscription and raid notices", () => {
     expect(parseUserNotice("@display-name=NeonFox;msg-id=sub USERNOTICE #oni :")).toMatchObject({ system: "subscription", displayName: "NeonFox" });
     expect(parseUserNotice("@display-name=RaidBoss;msg-id=raid;msg-param-viewerCount=42 USERNOTICE #oni :")).toMatchObject({ system: "raid", text: "RaidBoss is raiding with 42 viewers" });
