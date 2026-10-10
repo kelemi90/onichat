@@ -12,6 +12,9 @@ services:
     pids_limit: 128
     mem_limit: 512m
     env_file: .env
+    environment:
+      TWITCH_OAUTH_TOKEN: ""
+      TWITCH_REFRESH_TOKEN: ""
     ports:
       - "3000:3000"
     depends_on:
@@ -31,10 +34,17 @@ services:
     pids_limit: 128
     mem_limit: 256m
     env_file: .env
+    environment:
+      TWITCH_REFRESH_TOKEN_FILE: ${TWITCH_REFRESH_TOKEN_FILE:-/var/lib/oni-chat-relay/refresh-token}
     ports:
       - "127.0.0.1:8787:8787"
+    volumes:
+      - relay-token-data:/var/lib/oni-chat-relay
     healthcheck:
       test: ["CMD", "wget", "--spider", "-q", "http://127.0.0.1:8787/health"]
       interval: 30s
       timeout: 5s
       retries: 3
+
+volumes:
+  relay-token-data:

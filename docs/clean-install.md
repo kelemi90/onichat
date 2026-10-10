@@ -64,6 +64,7 @@ TWITCH_BOT_USERNAME=BOT_USERNAME
 TWITCH_CHANNEL=CHANNEL_NAME
 TWITCH_OAUTH_TOKEN=oauth_token_for_the_bot_account
 TWITCH_CLIENT_ID=TWITCH_CLIENT_ID
+TWITCH_REFRESH_TOKEN=
 
 RELAY_PORT=8787
 RELAY_MAX_CLIENTS=100
@@ -93,6 +94,8 @@ https://id.twitch.tv/oauth2/authorize?client_id=TWITCH_CLIENT_ID&redirect_uri=ht
 ```
 
 The redirect URL contains the token in the URL fragment after `#access_token=`. Copy only the token value into `TWITCH_OAUTH_TOKEN`. Do not share the fragment or token.
+
+An implicit-flow access token has no refresh token and cannot be renewed automatically. To enable renewal, obtain both an access token and refresh token using an OAuth flow that issues refresh tokens, then set `TWITCH_REFRESH_TOKEN` in `.env`. The relay refreshes the access token before it expires. Twitch rotates refresh tokens, so the relay saves the latest one in a Docker-managed persistent volume; keep that volume when updating or recreating containers. If your Twitch application requires a client secret for token refresh, also set `TWITCH_CLIENT_SECRET` in `.env`.
 
 Validate the token without printing it:
 

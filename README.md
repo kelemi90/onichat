@@ -18,7 +18,56 @@ Run `pnpm check` for TypeScript validation, `pnpm test` for unit tests, and `pnp
 
 ## Twitch setup
 
-Create or use a dedicated Twitch bot account. Generate an IRC OAuth token with `chat:read chat:edit` permissions through a trusted Twitch OAuth flow, then store it only in the host `.env` file described in `docs/environment-variables.md`. Set `TWITCH_BOT_USERNAME`, `TWITCH_OAUTH_TOKEN`, and `TWITCH_CHANNEL` on the host. Never place these values in frontend code, URL parameters, browser storage, or variables beginning with `VITE_`. The token must belong to the account named by `TWITCH_BOT_USERNAME`.
+The relay uses Twitch IRC, so it needs a **User Access Token** with the IRC scopes `chat:read` and `chat:edit`, plus a **Refresh Token** to renew access automatically. The bot's Twitch password is never needed.
+
+1. Create a Twitch application in the [Twitch Developer Console](https://dev.twitch.tv/console/apps). Install the [Twitch CLI](https://dev.twitch.tv/docs/cli/) and run `twitch configure`; enter this application's Client ID and secret at its prompts. This must be the same application whose Client ID is set as `TWITCH_CLIENT_ID`.
+2. Log in as the Twitch account that should act as the bot, then run:
+
+   ```bash
+   twitch token --user-token --dcf --scopes "chat:read chat:edit"
+   ```
+
+   Approve the request in Twitch. The CLI prints a **User Access Token**, **Refresh Token**, expiration, and scopes. Use the user access token—not the refresh token—for `TWITCH_OAUTH_TOKEN`. The account that authorized the request must match `TWITCH_BOT_USERNAME` (its lowercase Twitch login). `TWITCH_CHANNEL` is the channel to join and can be a different account.
+3. Put the credentials in the host `.env` file beside `docker-compose.yml`, with restrictive permissions. For example:
+
+   ```dotenv
+   TWITCH_CLIENT_ID=your_application_client_id
+   TWITCH_CLIENT_SECRET=your_application_client_secret
+   TWITCH_BOT_USERNAME=bot_account_login
+   TWITCH_CHANNEL=channel_to_join
+   TWITCH_OAUTH_TOKEN=the_user_access_token
+   TWITCH_REFRESH_TOKEN=the_refresh_token
+   ```
+
+   Keep the client secret and tokens private. Do not commit `.env`, paste credentials into chat/issues, or place them in frontend code, URLs, browser storage, or variables prefixed with `VITE_`. The relay accepts an optional `oauth:` prefix on the access token.
+4. You can validate the access token without echoing it to the terminal:
+
+   ```bash
+   read -r -s -p "Twitch access token: " TWITCH_TOKEN; printf '\n'
+   printf 'header = "Authorization: OAuth %s"\n' "$TWITCH_TOKEN" |
+     curl -sS --config - https://id.twitch.tv/oauth2/validate
+   unset TWITCH_TOKEN
+   ```
+
+   Confirm the response's `login` matches `TWITCH_BOT_USERNAME`, `client_id` matches `TWITCH_CLIENT_ID`, and `scopes` include `chat:read` (and `chat:edit` for IRC sending). Never validate or use the refresh token as an access token.
+5. Start or recreate the relay so it reads the current `.env`:
+
+   ```bash
+   docker compose up -d --force-recreate relay
+   docker compose logs --tail=50 relay
+   ```
+
+   A successful connection logs `joined #...`. The relay refreshes the access token before it expires and saves Twitch's rotated refresh token in the persistent `relay-token-data` Docker volume. The saved token takes precedence over `TWITCH_REFRESH_TOKEN` on future starts. If replacing credentials, enter the new refresh token into that volume as well:
+
+   ```bash
+   read -r -s -p "New Twitch refresh token: " TWITCH_REFRESH_TOKEN; printf '\n'
+   printf '%s\n' "$TWITCH_REFRESH_TOKEN" |
+     docker compose exec -T relay sh -c 'umask 077; cat > /var/lib/oni-chat-relay/refresh-token'
+   unset TWITCH_REFRESH_TOKEN
+   docker compose restart relay
+   ```
+
+   If IRC reports `Login unsuccessful`, validate the **access** token and check its account login against `TWITCH_BOT_USERNAME`. A successful refresh or badge lookup alone does not prove the IRC login is correct.
 
 The relay joins Twitch using IRC over TLS, responds to server `PING` frames, requests Twitch tags and emote metadata, and reconnects with exponential backoff after network failures. The `/health` endpoint reports whether the relay is currently connected.
 

@@ -14,7 +14,11 @@ export class TwitchBadgeCatalog {
   private readonly badges = new Map<string, BadgeImage>();
   private loaded = false;
 
-  constructor(private readonly clientId: string, private readonly token: string, private readonly channel: string) {}
+  constructor(private readonly clientId: string, private token: string, private readonly channel: string) {}
+
+  setToken(token: string) {
+    this.token = token;
+  }
 
   async load() {
     if (!this.clientId || !this.token || !this.channel) return;

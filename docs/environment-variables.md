@@ -5,8 +5,11 @@ Create a `.env` file on the Proxmox host next to `docker-compose.yml`; do not co
 | Variable | Required | Purpose |
 |---|---:|---|
 | `TWITCH_CLIENT_ID` | Yes for Twitch badge images | Twitch Developer application client ID used to query global and channel badge metadata. |
+| `TWITCH_CLIENT_SECRET` | No | Optional Twitch application secret used when refreshing OAuth tokens. Keep it server-side. |
 | `TWITCH_BOT_USERNAME` | Yes for live mode | Twitch account username used by the IRC relay. |
-| `TWITCH_OAUTH_TOKEN` | Yes for live mode | OAuth token for the bot account, stored only in the relay container. Remove the `oauth:` prefix if you prefer; the relay accepts either form. |
+| `TWITCH_OAUTH_TOKEN` | Yes for live mode unless using automatic refresh | OAuth access token for the bot account. Remove the `oauth:` prefix if you prefer; the relay accepts either form. |
+| `TWITCH_REFRESH_TOKEN` | No | Refresh token for the bot account. When set with `TWITCH_CLIENT_ID`, the relay refreshes its access token automatically and saves Twitch's rotated refresh token. Token variables are only passed to the relay container. |
+| `TWITCH_REFRESH_TOKEN_FILE` | No | Path used to persist the latest refresh token. Docker Compose defaults to `/var/lib/oni-chat-relay/refresh-token` in a persistent named volume; outside Compose the default is `/tmp/oni-chat-relay/refresh-token`. |
 | `TWITCH_CHANNEL` | Yes for live mode | Channel joined by the relay, without the leading `#`. |
 | `RELAY_PORT` | No | Internal relay port; defaults to `8787`. |
 | `RELAY_MAX_CLIENTS` | No | Maximum simultaneous overlay connections; defaults to `100`. |
